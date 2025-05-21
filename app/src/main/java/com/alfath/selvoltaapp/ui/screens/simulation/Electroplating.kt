@@ -31,6 +31,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.max
+import androidx.compose.ui.unit.times
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.alfath.selvoltaapp.R
@@ -245,18 +246,18 @@ fun Electroplating(
                 if (isElectroplating) {
                     selectedAnode?.let { anodeMetal ->
                         IonAnimation(
-                            anodeWidth = anodeWidth,
-                            anodeHeight = anodeHeight,
-                            anodeOffsetX = anodeX,
-                            anodeOffsetY = anodeY,
-                            endPosition = Offset(
-                                with(density) { cathodeX.toPx() + cathodeWidth.toPx() * 0.5f },
-                                with(density) { cathodeY.toPx() + cathodeHeight.toPx() * 0.5f }
+                            startPosition = Offset(
+                                with(density) { (anodeX + anodeWidth - 15.dp + Random.nextFloat() * anodeWidth * 0.5f).toPx() },
+                                with(density) { (anodeY + anodeHeight - 20.dp).toPx() }
                             ),
+                            endPosition = Offset(
+                                with(density) { (cathodeX + cathodeWidth * 0.75f).toPx() }, // Geser ke kanan 75% lebar katoda
+                                with(density) { (cathodeY + cathodeHeight / 2).toPx() }
+                            ),
+                            cathodeWidthPx = with(density) { cathodeWidth.toPx() },
+                            cathodeHeightPx = with(density) { cathodeHeight.toPx() },
                             metal = anodeMetal,
-                            cellWidth = cellW,
-                            cellHeight = cellH,
-                            onIonAttached = { offset ->
+                            onIonAttached = { offset: Offset ->
                                 attachedIons.add(offset)
                                 if (anodeSizeFactor > 0.5f) anodeSizeFactor -= 0.002f
                             }
@@ -264,7 +265,6 @@ fun Electroplating(
                     }
                 }
 
-                // Tampilkan ion yang menempel di katoda
                 attachedIons.forEach { offset ->
                     Image(
                         painter = painterResource(id = getIconForMetal(selectedAnode!!)),
@@ -299,31 +299,22 @@ fun Electroplating(
 
 @Composable
 fun IonAnimation(
-    anodeWidth: Dp,
-    anodeHeight: Dp,
-    anodeOffsetX: Dp,
-    anodeOffsetY: Dp,
+    startPosition: Offset,
     endPosition: Offset,
+    cathodeWidthPx: Float,
+    cathodeHeightPx: Float,
     metal: Metal,
-    cellWidth: Dp,
-    cellHeight: Dp,
     onIonAttached: (Offset) -> Unit
 ) {
     val ions = remember { mutableStateListOf<Bubble>() }
     val density = LocalDensity.current
-    val anodeWidthPx = with(density) { anodeWidth.toPx() }
-    val anodeHeightPx = with(density) { anodeHeight.toPx() }
-    val anodeOffsetXPx = with(density) { anodeOffsetX.toPx() }
-    val anodeOffsetYPx = with(density) { anodeOffsetY.toPx() }
-    val cathodeWidthPx = with(density) { (cellWidth * 0.1f).toPx() }
-    val cathodeHeightPx = with(density) { (cellHeight * 0.4f).toPx() }
 
     LaunchedEffect(Unit) {
         while (true) {
-            if (ions.size < 3) {
-                ions.add(Bubble(size = Random.nextFloat() * 6 + 6))
+            if (ions.size < 30) {
+                ions.add(Bubble(size = Random.nextFloat() * 20 + 6))
             }
-            delay(800)
+            delay(500)
             ions.removeAll { it.progress >= 1f }
         }
     }
@@ -332,33 +323,30 @@ fun IonAnimation(
         ions.forEach { bubble ->
             val progress by animateFloatAsState(
                 targetValue = bubble.progress,
-                animationSpec = tween(durationMillis = 5000)
+                animationSpec = tween(durationMillis = 4000)
             )
             LaunchedEffect(bubble) {
                 while (bubble.progress < 1f) {
-                    bubble.progress += 0.004f
-                    delay(1000)
+                    bubble.progress += 0.005f
+                    delay(16)
                 }
                 val attachedOffset = Offset(
-                    x = endPosition.x + (Random.nextFloat() - 0.5f) * cathodeWidthPx * 0.5f,
-                    y = endPosition.y + (Random.nextFloat() - 0.5f) * cathodeHeightPx * 0.5f
+                    x = endPosition.x + (Random.nextFloat() - 1f) * cathodeWidthPx + 20f,
+                    y = endPosition.y + (Random.nextFloat() - 0.5f) * cathodeHeightPx
                 )
                 onIonAttached(attachedOffset)
             }
 
-            val startPosition = Offset(
-                x = anodeOffsetXPx + anodeWidthPx, // Sisi kanan anoda
-                y = anodeOffsetYPx + Random.nextFloat() * anodeHeightPx
-            )
-            val currentX = startPosition.x + (endPosition.x - startPosition.x) * progress + Random.nextFloat() * 5f - 2.5f
-            val currentY = startPosition.y + (endPosition.y - startPosition.y) * progress + Random.nextFloat() * 5f - 2.5f
+            val currentX = startPosition.x + (endPosition.x - startPosition.x) * progress
+            val currentY = startPosition.y + (endPosition.y - startPosition.y) * progress
 
             Image(
                 painter = painterResource(id = getIconForMetal(metal)),
                 contentDescription = "Ion ${metal.ion}",
-                modifier = Modifier.offset(x = with(density) { currentX.toDp() }, y = with(density) { currentY.toDp() })
+                modifier = Modifier
+                    .offset(x = with(density) { currentX.toDp() }, y = with(density) { currentY.toDp() })
                     .size(bubble.size.dp)
-                    .graphicsLayer { alpha = 1f - progress * 0.3f }
+                    .graphicsLayer { alpha = 1f - progress * 0.5f }
             )
         }
     }
@@ -373,6 +361,7 @@ private fun getIconForMetal(metal: Metal): Int {
         else -> R.drawable.ic_default
     }
 }
+
 @Preview(
     name = "Phone 16:9 L",
     showBackground = true,

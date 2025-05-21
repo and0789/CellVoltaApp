@@ -4,6 +4,7 @@ package com.alfath.selvoltaapp.ui.screens.simulation.utils
 import androidx.compose.ui.graphics.Color
 
 class Utils {
+
 }
 
 fun isColorDark(color: Color): Boolean {

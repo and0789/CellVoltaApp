@@ -20,5 +20,5 @@ data class Solution(
 data class Bubble(
     val x: Float = (Math.random() - 0.5).toFloat() * 2,
     var progress: Float = 0f,
-    val size: Float = 10f + (Math.random() * 10).toFloat()
+    val size: Float = 15f + (Math.random() * 10).toFloat()
 )
