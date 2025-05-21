@@ -155,6 +155,11 @@ fun VoltaCell(
         val notationBoxWidth = screenW * 0.035f // Responsif terhadap lebar layar
         val notationFont = with(density) { (screenW * 0.012f).toSp() }
 
+        val padX = screenW * 0.01f  // 5% dari lebar layar untuk padding horizontal
+        val padY = screenH * 0.03f
+
+        val btnSize = screenH * 0.1f
+
         Image(
             painter = painterResource(id = bgRes),
             contentDescription = null,
@@ -166,7 +171,8 @@ fun VoltaCell(
             onClick = { navController.navigateUp() },
             modifier = Modifier
                 .padding(pad)
-                .size(32.dp)
+                .offset(x = padX, y = padY)
+                .size(btnSize)
         ) {
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,

@@ -75,7 +75,7 @@ fun TableVolta(
                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                 contentDescription = "Back",
                 tint = Color.Blue,
-                modifier = Modifier.size(btnSize * 0.9f)
+                modifier = Modifier.size(btnSize * 0.4f)
             )
         }
 

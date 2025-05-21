@@ -101,7 +101,7 @@ fun AuthorProfile(
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                 contentDescription = "Back",
-                tint = Color.White,
+                tint = Color.Black,
                 modifier = Modifier.size(buttonSize * 0.8f)
             )
         }

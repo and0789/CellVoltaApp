@@ -136,6 +136,11 @@ fun SpontaneousReaction(
         val potFont = with(density) { (screenW * 0.015f).toSp() }
         val metalFont = with(density) { (screenW * 0.01f).toSp() }
 
+        val padX = screenW * 0.01f  // 5% dari lebar layar untuk padding horizontal
+        val padY = screenH * 0.03f
+
+        val btnSize = screenH * 0.1f
+
         // Latar belakang layar
         Image(
             painter = painterResource(id = bgRes),
@@ -149,11 +154,12 @@ fun SpontaneousReaction(
             onClick = { navController.navigateUp() },
             modifier = Modifier
                 .padding(pad)
-                .size(32.dp)
+                .offset(x = padX, y = padY)
+                .size(btnSize)
         ) {
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                contentDescription = "Kembali",
+                contentDescription = "Back",
                 tint = Color.Black
             )
         }
