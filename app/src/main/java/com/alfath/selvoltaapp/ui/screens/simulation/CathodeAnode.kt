@@ -123,6 +123,7 @@ fun CathodeAnode(
                 errorCount++
                 if (errorCount >= 2) "Perhatikan nilai potensialnya!" else "Kombinasi tidak valid: Katoda harus memiliki potensial lebih besar dari anoda. Pilih ulang."
             }
+
             else -> {
                 errorCount = 0
                 null
@@ -706,11 +707,13 @@ fun ElectronAnimation(
                     val yPos = startY - segmentProgress * (startY - topY)
                     Pair(startX, yPos)
                 }
+
                 progress < 0.7f -> {
                     val segmentProgress = (progress - 0.3f) / 0.4f
                     val xPos = startX + segmentProgress * (endX - startX)
                     Pair(xPos, topY)
                 }
+
                 else -> {
                     val segmentProgress = (progress - 0.7f) / 0.3f
                     val yPos = topY + segmentProgress * (endY - topY)

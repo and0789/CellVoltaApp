@@ -7,7 +7,19 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -16,8 +28,20 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -28,7 +52,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.max
 import androidx.compose.ui.unit.times
@@ -115,18 +138,30 @@ fun Electroplating(
             fontSize = titleFont,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.align(Alignment.TopCenter).padding(top = pad + screenW * 0.015f)
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .padding(top = pad + screenW * 0.015f)
         )
 
         Row(
-            Modifier.fillMaxSize().padding(top = pad + extraTop, start = pad + extraStart, end = pad, bottom = pad),
+            Modifier
+                .fillMaxSize()
+                .padding(top = pad + extraTop, start = pad + extraStart, end = pad, bottom = pad),
             verticalAlignment = Alignment.Top
         ) {
             Column(
-                Modifier.width(listW).fillMaxHeight().verticalScroll(rememberScrollState()),
+                Modifier
+                    .width(listW)
+                    .fillMaxHeight()
+                    .verticalScroll(rememberScrollState()),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text("Pilih Logam Anoda", color = Color.Black, fontSize = metalFont, fontWeight = FontWeight.Bold)
+                Text(
+                    "Pilih Logam Anoda",
+                    color = Color.Black,
+                    fontSize = metalFont,
+                    fontWeight = FontWeight.Bold
+                )
                 Spacer(Modifier.height(screenH * 0.02f))
                 LazyVerticalGrid(
                     columns = GridCells.Fixed(2),
@@ -135,10 +170,16 @@ fun Electroplating(
                     modifier = Modifier.height(screenH * 0.3f)
                 ) {
                     items(anodeMetals) { metal ->
-                        Box(modifier = Modifier.width(listW * 0.3f).height(listW * 0.6f)) {
+                        Box(modifier = Modifier
+                            .width(listW * 0.3f)
+                            .height(listW * 0.6f)) {
                             Box(
-                                modifier = Modifier.fillMaxSize()
-                                    .background(if (selectedAnode == metal) Color.Green else metal.color, RoundedCornerShape(8.dp))
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .background(
+                                        if (selectedAnode == metal) Color.Green else metal.color,
+                                        RoundedCornerShape(8.dp)
+                                    )
                                     .border(1.dp, Color.Gray, RoundedCornerShape(8.dp))
                             )
                             Text(
@@ -158,7 +199,12 @@ fun Electroplating(
                     }
                 }
 
-                Text("Pilih Logam Katoda", color = Color.Black, fontSize = metalFont, fontWeight = FontWeight.Bold)
+                Text(
+                    "Pilih Logam Katoda",
+                    color = Color.Black,
+                    fontSize = metalFont,
+                    fontWeight = FontWeight.Bold
+                )
                 Spacer(Modifier.height(screenH * 0.02f))
                 LazyVerticalGrid(
                     columns = GridCells.Fixed(2),
@@ -167,10 +213,16 @@ fun Electroplating(
                     modifier = Modifier.height(screenH * 0.25f)
                 ) {
                     items(cathodeMetals) { metal ->
-                        Box(modifier = Modifier.width(listW * 0.3f).height(listW * 0.6f)) {
+                        Box(modifier = Modifier
+                            .width(listW * 0.3f)
+                            .height(listW * 0.6f)) {
                             Box(
-                                modifier = Modifier.fillMaxSize()
-                                    .background(if (selectedCathode == metal) Color.Green else metal.color, RoundedCornerShape(8.dp))
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .background(
+                                        if (selectedCathode == metal) Color.Green else metal.color,
+                                        RoundedCornerShape(8.dp)
+                                    )
                                     .border(1.dp, Color.Gray, RoundedCornerShape(8.dp))
                             )
                             Text(
@@ -193,7 +245,10 @@ fun Electroplating(
 
             Spacer(Modifier.width(pad))
 
-            Box(Modifier.width(cellW).height(cellH).background(Color.White)) {
+            Box(Modifier
+                .width(cellW)
+                .height(cellH)
+                .background(Color.White)) {
                 Image(
                     painter = painterResource(id = cellRes),
                     contentDescription = null,
@@ -207,13 +262,16 @@ fun Electroplating(
                 val anodeWidth = cellW * 0.07f * anodeSizeFactor
                 val anodeHeight = cellH * 0.4f * anodeSizeFactor
                 Box(
-                    modifier = Modifier.offset(x = anodeX, y = anodeY)
+                    modifier = Modifier
+                        .offset(x = anodeX, y = anodeY)
                         .size(width = anodeWidth, height = anodeHeight)
                         .border(1.dp, Color.Gray)
                 ) {
                     if (selectedAnode != null) {
                         Box(
-                            modifier = Modifier.fillMaxSize().background(selectedAnode!!.color)
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(selectedAnode!!.color)
                         ) {
                             Text(
                                 text = selectedAnode!!.symbol,
@@ -231,14 +289,16 @@ fun Electroplating(
                 val cathodeWidth = cellW * 0.07f
                 val cathodeHeight = cellH * 0.4f
                 Box(
-                    modifier = Modifier.offset(x = cathodeX, y = cathodeY)
+                    modifier = Modifier
+                        .offset(x = cathodeX, y = cathodeY)
                         .size(width = cathodeWidth, height = cathodeHeight)
                         .border(1.dp, Color.Gray)
                         .background(selectedCathode?.color ?: Color.Transparent)
                 ) {
                     if (selectedCathode != null) {
                         Box(
-                            modifier = Modifier.fillMaxSize()
+                            modifier = Modifier
+                                .fillMaxSize()
                                 .background(selectedCathode!!.color.copy(alpha = 0.5f))
                         ) {
                             Text(
@@ -277,7 +337,10 @@ fun Electroplating(
                     Image(
                         painter = painterResource(id = getIconForMetal(selectedAnode!!)),
                         contentDescription = "Ion menempel",
-                        modifier = Modifier.offset(x = with(density) { offset.x.toDp() }, y = with(density) { offset.y.toDp() })
+                        modifier = Modifier
+                            .offset(
+                                x = with(density) { offset.x.toDp() },
+                                y = with(density) { offset.y.toDp() })
                             .size(10.dp)
                             .graphicsLayer { alpha = 0.8f }
                     )
@@ -286,7 +349,12 @@ fun Electroplating(
 
             Spacer(Modifier.width(pad))
 
-            Column(Modifier.width(btnW).fillMaxHeight(), horizontalAlignment = Alignment.CenterHorizontally) {
+            Column(
+                Modifier
+                    .width(btnW)
+                    .fillMaxHeight(),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
                 Button(
                     onClick = {
                         selectedAnode = null
@@ -295,7 +363,9 @@ fun Electroplating(
                         attachedIons.clear()
                         anodeSizeFactor = 1f
                     },
-                    modifier = Modifier.width(btnW).height(btnH),
+                    modifier = Modifier
+                        .width(btnW)
+                        .height(btnH),
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFF44336))
                 ) {
                     Text("RESET")
@@ -352,7 +422,9 @@ fun IonAnimation(
                 painter = painterResource(id = getIconForMetal(metal)),
                 contentDescription = "Ion ${metal.ion}",
                 modifier = Modifier
-                    .offset(x = with(density) { currentX.toDp() }, y = with(density) { currentY.toDp() })
+                    .offset(
+                        x = with(density) { currentX.toDp() },
+                        y = with(density) { currentY.toDp() })
                     .size(bubble.size.dp)
                     .graphicsLayer { alpha = 1f - progress * 0.5f }
             )
