@@ -65,10 +65,6 @@ import com.alfath.selvoltaapp.ui.screens.simulation.utils.isColorDark
 
 // Konstanta untuk meningkatkan keterbacaan dan memudahkan perubahan
 private const val ANIMATION_DURATION_MS = 2000
-private const val MAX_IONS = 60
-private const val IONS_TO_REMOVE = 10
-private const val ELECTRON_DELAY_MS = 300L
-private const val MAX_ATTACHED_ELECTRONS = 5
 
 @SuppressLint("ContextCastToActivity")
 @Composable
@@ -96,7 +92,7 @@ fun SpontaneousReaction(
     // Menghitung potensial sel jika anode dan katoda ada
     val cellE: Float? = anode?.let { a -> cathode?.let { c -> c.potential - a.potential } }
 
-    var isAnimationRunning by remember { mutableStateOf(false) }
+    val isAnimationRunning by remember { mutableStateOf(false) }
 
     // Validasi kombinasi anode dan katoda
     LaunchedEffect(anode, cathode) {

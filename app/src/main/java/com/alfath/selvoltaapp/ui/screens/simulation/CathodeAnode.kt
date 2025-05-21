@@ -41,6 +41,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -661,6 +662,7 @@ fun CathodeIonAnimation(
     }
 }
 
+@SuppressLint("AutoboxingStateCreation")
 @Composable
 fun ElectronAnimation(
     startX: Float,
@@ -685,7 +687,7 @@ fun ElectronAnimation(
 
     Box(modifier = Modifier.fillMaxSize()) {
         electrons.forEachIndexed { index, _ ->
-            var progress by remember { mutableStateOf(0f) }
+            var progress by remember { mutableFloatStateOf(0f) }
 
             LaunchedEffect(index, isRunning) {
                 while (isRunning && progress < 1f) {

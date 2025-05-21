@@ -1,3 +1,5 @@
+@file:Suppress("NAME_SHADOWING")
+
 package com.alfath.selvoltaapp.ui.screens.simulation
 
 import android.annotation.SuppressLint

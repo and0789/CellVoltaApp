@@ -1,6 +1,6 @@
 package com.alfath.selvoltaapp.ui.screens.simulation
 
-import android.app.Activity
+
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -15,8 +15,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
@@ -30,21 +28,15 @@ fun LearningObjective(
     navController: NavController,
     @DrawableRes bgRes: Int = R.drawable.cover_learning_objective
 ) {
-    // Context for back navigation
-    val context = LocalContext.current
-    val activity = context as? Activity
+
 
     BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
         val screenW = maxWidth
         val screenH = maxHeight
-        val density = LocalDensity.current
 
         // Dynamic sizes
         val btnSize: Dp = screenW * 0.15f
-        val btnPadding: Dp = screenW * 0.005f
-        val colTopPadding: Dp = screenH * 0.15f
-        val titleFontSize = with(density) { (screenW * 0.06f).toSp() }
-        val spacerHeight: Dp = screenH * 0.02f
+
 
         // Background image
         Image(
