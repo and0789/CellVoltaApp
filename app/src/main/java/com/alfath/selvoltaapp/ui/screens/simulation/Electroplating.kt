@@ -7,43 +7,21 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
@@ -54,41 +32,83 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.max
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.times
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.alfath.selvoltaapp.R
-import com.alfath.selvoltaapp.ui.screens.simulation.models.Bubble
-import com.alfath.selvoltaapp.ui.screens.simulation.models.Metal
 import com.alfath.selvoltaapp.ui.screens.simulation.utils.isColorDark
 import kotlinx.coroutines.delay
+import kotlin.math.PI
+import kotlin.math.sin
 import kotlin.random.Random
+
+// Data class untuk bubble ion dengan animasi yang lebih smooth
+data class BubbleElectroplating(
+    var size: Float,
+    var scale: Float = 0f,
+    var progress: Float = 0f,
+    var opacity: Float = 1f,
+    val startOffset: Offset,
+    val endOffset: Offset,
+    val animationDelay: Long = 0L
+)
+
+data class MetalElectroplating(
+    val symbol: String,
+    val ion: String,
+    val potential: Float,
+    val color: Color
+)
+
+// Fungsi untuk mendapatkan ikon berdasarkan simbol logam
+private fun getIconForMetal(metal: MetalElectroplating): Int {
+    return when (metal.symbol) {
+        "Pt" -> R.drawable.ic_pt
+        "Cu" -> R.drawable.ic_cu
+        "Ca" -> R.drawable.ic_ca
+        "Ba" -> R.drawable.ic_ba
+        else -> R.drawable.ic_default
+    }
+}
 
 @SuppressLint("ContextCastToActivity")
 @Composable
 fun Electroplating(
     navController: NavController,
     @DrawableRes bgRes: Int = R.drawable.content_background,
-    @DrawableRes cellRes: Int = R.drawable.ic_electroplating
+    @DrawableRes cellRes: Int = R.drawable.electroplatig_background
 ) {
     val anodeMetals = listOf(
-        Metal("Pt", "Pt²⁺", 1.18f, Color(0xFF808080)),
-        Metal("Cu", "Cu²⁺", 0.34f, Color(0xFFCD7F32))
+        MetalElectroplating("Pt", "Pt²⁺", 1.18f, Color(0xFF808080)),
+        MetalElectroplating("Cu", "Cu²⁺", 0.34f, Color(0xFFCD7F32))
     )
 
     val cathodeMetals = listOf(
-        Metal("Ca", "Ca²⁺", -2.87f, Color(0xFF9ACD32)),
-        Metal("Ba", "Ba²⁺", -2.91f, Color(0xFFADFF2F))
+        MetalElectroplating("Ca", "Ca²⁺", -2.87f, Color(0xFF9ACD32)),
+        MetalElectroplating("Ba", "Ba²⁺", -2.91f, Color(0xFFADFF2F))
     )
 
-    var selectedAnode by remember { mutableStateOf<Metal?>(null) }
-    var selectedCathode by remember { mutableStateOf<Metal?>(null) }
+    var selectedAnode by remember { mutableStateOf<MetalElectroplating?>(null) }
+    var selectedCathode by remember { mutableStateOf<MetalElectroplating?>(null) }
     var isElectroplating by remember { mutableStateOf(false) }
+
+    // State untuk ion yang menempel di katoda (hanya Offset)
     val attachedIons = remember { mutableStateListOf<Offset>() }
+
+    // State untuk ukuran anoda yang semakin mengecil (dalam faktor 0.0 - 1.0)
     var anodeSizeFactor by remember { mutableFloatStateOf(1f) }
+
+    // State untuk ketebalan lapisan di katoda (dalam dp)
+    var cathodeLayerThickness by remember { mutableFloatStateOf(0f) }
 
     LaunchedEffect(selectedAnode, selectedCathode) {
         isElectroplating = selectedAnode != null && selectedCathode != null
+        if (!isElectroplating) {
+            attachedIons.clear()
+            anodeSizeFactor = 1f
+            cathodeLayerThickness = 0f
+        }
     }
 
     BoxWithConstraints(Modifier.fillMaxSize()) {
@@ -104,12 +124,11 @@ fun Electroplating(
         val extraStart = screenW * 0.015f
         val rawBtnH = screenH * 0.06f
         val btnH = max(rawBtnH, 48.dp)
-        val titleFont = with(density) { (screenW * 0.05f).toSp() }
-        val metalFont = with(density) { (screenW * 0.015f).toSp() }
+        val titleFont = 20.sp
+        val metalFont = 12.sp
 
-        val padX = screenW * 0.01f  // 5% dari lebar layar untuk padding horizontal
+        val padX = screenW * 0.01f
         val padY = screenH * 0.03f
-
         val btnSize = screenH * 0.1f
 
         Image(
@@ -149,6 +168,7 @@ fun Electroplating(
                 .padding(top = pad + extraTop, start = pad + extraStart, end = pad, bottom = pad),
             verticalAlignment = Alignment.Top
         ) {
+            // Panel Seleksi Logam
             Column(
                 Modifier
                     .width(listW)
@@ -245,6 +265,7 @@ fun Electroplating(
 
             Spacer(Modifier.width(pad))
 
+            // Area Sel Elektrolisis dengan Animasi yang Diperbaiki
             Box(Modifier
                 .width(cellW)
                 .height(cellH)
@@ -256,22 +277,36 @@ fun Electroplating(
                     contentScale = androidx.compose.ui.layout.ContentScale.Fit
                 )
 
-                // Anoda
+                // Anoda (semakin mengecil seiring waktu)
                 val anodeX = cellW * 0.15f
                 val anodeY = cellH * 0.25f
-                val anodeWidth = cellW * 0.07f * anodeSizeFactor
-                val anodeHeight = cellH * 0.4f * anodeSizeFactor
+                val baseAnodeWidth = cellW * 0.07f
+                val baseAnodeHeight = cellH * 0.4f
+
+                val animatedAnodeSizeFactor by animateFloatAsState(
+                    targetValue = anodeSizeFactor,
+                    animationSpec = tween(durationMillis = 300)
+                )
+
+                // Hitung ukuran anoda berdasarkan faktor
+                val currentAnodeWidth = baseAnodeWidth * animatedAnodeSizeFactor
+                val currentAnodeHeight = baseAnodeHeight * animatedAnodeSizeFactor
+
+                // Posisi tengah anoda tetap sama
+                val anodeOffsetX = anodeX + (baseAnodeWidth - currentAnodeWidth) / 2
+                val anodeOffsetY = anodeY + (baseAnodeHeight - currentAnodeHeight) / 2
+
                 Box(
                     modifier = Modifier
-                        .offset(x = anodeX, y = anodeY)
-                        .size(width = anodeWidth, height = anodeHeight)
+                        .offset(x = anodeOffsetX, y = anodeOffsetY)
+                        .size(width = currentAnodeWidth, height = currentAnodeHeight)
                         .border(1.dp, Color.Gray)
                 ) {
                     if (selectedAnode != null) {
                         Box(
                             modifier = Modifier
                                 .fillMaxSize()
-                                .background(selectedAnode!!.color)
+                                .background(selectedAnode!!.color.copy(alpha = 0.7f))
                         ) {
                             Text(
                                 text = selectedAnode!!.symbol,
@@ -283,15 +318,30 @@ fun Electroplating(
                     }
                 }
 
-                // Katoda
+                // Katoda dengan lapisan yang semakin tebal
                 val cathodeX = cellW * 0.325f
                 val cathodeY = cellH * 0.25f
-                val cathodeWidth = cellW * 0.07f
-                val cathodeHeight = cellH * 0.4f
+                val baseCathodeWidth = cellW * 0.07f
+                val baseCathodeHeight = cellH * 0.4f
+
+                val animatedLayerThickness by animateFloatAsState(
+                    targetValue = cathodeLayerThickness,
+                    animationSpec = tween(durationMillis = 500)
+                )
+
+                // Konversi thickness ke Dp
+                val layerThicknessDp = animatedLayerThickness.dp
+                val currentCathodeWidth = baseCathodeWidth + layerThicknessDp
+                val currentCathodeHeight = baseCathodeHeight
+
+                // Base katoda
                 Box(
                     modifier = Modifier
-                        .offset(x = cathodeX, y = cathodeY)
-                        .size(width = cathodeWidth, height = cathodeHeight)
+                        .offset(
+                            x = cathodeX - layerThicknessDp / 2,
+                            y = cathodeY
+                        )
+                        .size(width = currentCathodeWidth, height = currentCathodeHeight)
                         .border(1.dp, Color.Gray)
                         .background(selectedCathode?.color ?: Color.Transparent)
                 ) {
@@ -299,7 +349,7 @@ fun Electroplating(
                         Box(
                             modifier = Modifier
                                 .fillMaxSize()
-                                .background(selectedCathode!!.color.copy(alpha = 0.5f))
+                                .background(selectedCathode!!.color.copy(alpha = 0.7f))
                         ) {
                             Text(
                                 text = selectedCathode!!.symbol,
@@ -311,28 +361,45 @@ fun Electroplating(
                     }
                 }
 
-                if (isElectroplating) {
-                    selectedAnode?.let { anodeMetal ->
-                        IonAnimation(
-                            startPosition = Offset(
-                                with(density) { (anodeX + anodeWidth - 15.dp + Random.nextFloat() * anodeWidth * 0.5f).toPx() },
-                                with(density) { (anodeY + anodeHeight - 20.dp).toPx() }
-                            ),
-                            endPosition = Offset(
-                                with(density) { (cathodeX + cathodeWidth * 0.75f).toPx() }, // Geser ke kanan 75% lebar katoda
-                                with(density) { (cathodeY + cathodeHeight / 2).toPx() }
-                            ),
-                            cathodeWidthPx = with(density) { cathodeWidth.toPx() },
-                            cathodeHeightPx = with(density) { cathodeHeight.toPx() },
-                            metal = anodeMetal,
-                            onIonAttached = { offset: Offset ->
-                                attachedIons.add(offset)
-                                if (anodeSizeFactor > 0.5f) anodeSizeFactor -= 0.002f
-                            }
-                        )
-                    }
+                // Lapisan logam dari anoda di katoda
+                if (selectedAnode != null && animatedLayerThickness > 0) {
+                    Box(
+                        modifier = Modifier
+                            .offset(
+                                x = cathodeX - layerThicknessDp / 2,
+                                y = cathodeY
+                            )
+                            .size(width = currentCathodeWidth, height = currentCathodeHeight)
+                            .background(
+                                selectedAnode!!.color.copy(alpha = 0.6f),
+                                RoundedCornerShape(2.dp)
+                            )
+                    )
                 }
 
+                // Animasi Ion yang Diperbaiki
+                if (isElectroplating && selectedAnode != null) {
+                    ImprovedIonAnimation(
+                        anodePosition = Offset(
+                            with(density) { (anodeX + currentAnodeWidth).toPx() },
+                            with(density) { (anodeY + currentAnodeHeight / 2).toPx() }
+                        ),
+                        cathodePosition = Offset(
+                            with(density) { cathodeX.toPx() },
+                            with(density) { (cathodeY + currentCathodeHeight / 2).toPx() }
+                        ),
+                        cathodeWidthPx = with(density) { currentCathodeWidth.toPx() },
+                        cathodeHeightPx = with(density) { currentCathodeHeight.toPx() },
+                        metal = selectedAnode!!,
+                        onIonAttached = { offset: Offset ->
+                            attachedIons.add(offset)
+                            if (anodeSizeFactor > 0.75f) anodeSizeFactor -= 0.005f
+                            if (cathodeLayerThickness < 10f) cathodeLayerThickness += 0.2f
+                        }
+                    )
+                }
+
+                // Render ion yang menempel di katoda
                 attachedIons.forEach { offset ->
                     Image(
                         painter = painterResource(id = getIconForMetal(selectedAnode!!)),
@@ -340,8 +407,9 @@ fun Electroplating(
                         modifier = Modifier
                             .offset(
                                 x = with(density) { offset.x.toDp() },
-                                y = with(density) { offset.y.toDp() })
-                            .size(10.dp)
+                                y = with(density) { offset.y.toDp() }
+                            )
+                            .size(20.dp)
                             .graphicsLayer { alpha = 0.8f }
                     )
                 }
@@ -349,6 +417,7 @@ fun Electroplating(
 
             Spacer(Modifier.width(pad))
 
+            // Panel Kontrol
             Column(
                 Modifier
                     .width(btnW)
@@ -362,6 +431,7 @@ fun Electroplating(
                         isElectroplating = false
                         attachedIons.clear()
                         anodeSizeFactor = 1f
+                        cathodeLayerThickness = 0f
                     },
                     modifier = Modifier
                         .width(btnW)
@@ -370,75 +440,149 @@ fun Electroplating(
                 ) {
                     Text("RESET")
                 }
+
+                Spacer(Modifier.height(16.dp))
+
+                // Informasi status
+                if (isElectroplating) {
+                    Card(
+                        modifier = Modifier.padding(4.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.9f))
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(8.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text(
+                                "Status:",
+                                fontSize = 20.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                "Electroplating Active",
+                                fontSize = 14.sp,
+                                color = Color.Blue
+                            )
+                            Text(
+                                "Anoda: ${(anodeSizeFactor * 100).toInt()}%",
+                                fontSize = 14.sp
+                            )
+                            Text(
+                                "Lapisan: ${(cathodeLayerThickness * 10).toInt()}μm",
+                                fontSize = 14.sp
+                            )
+                        }
+                    }
+                }
             }
         }
     }
 }
 
 @Composable
-fun IonAnimation(
-    startPosition: Offset,
-    endPosition: Offset,
+fun ImprovedIonAnimation(
+    anodePosition: Offset,
+    cathodePosition: Offset,
     cathodeWidthPx: Float,
     cathodeHeightPx: Float,
-    metal: Metal,
+    metal: MetalElectroplating,
     onIonAttached: (Offset) -> Unit
 ) {
-    val ions = remember { mutableStateListOf<Bubble>() }
+    val ions = remember { mutableStateListOf<BubbleElectroplating>() }
     val density = LocalDensity.current
 
+    // Generator ion yang keluar dari anoda
     LaunchedEffect(Unit) {
         while (true) {
             if (ions.size < 30) {
-                ions.add(Bubble(size = Random.nextFloat() * 20 + 6))
+                val randomStartY = anodePosition.y + (Random.nextFloat() - 0.5f) * 80f
+                val randomEndX = cathodePosition.x + (Random.nextFloat() - 0.5f) * cathodeWidthPx * 0.8f
+                val randomEndY = cathodePosition.y + (Random.nextFloat() - 0.5f) * cathodeHeightPx * 0.8f
+
+                ions.add(
+                    BubbleElectroplating(
+                        size = Random.nextFloat() * 12 + 8,
+                        startOffset = Offset(anodePosition.x - 50f, randomStartY + 65f),
+                        endOffset = Offset(randomEndX, randomEndY),
+                        animationDelay = Random.nextLong(0, 1000)
+                    )
+                )
             }
-            delay(500)
-            ions.removeAll { it.progress >= 1f }
+            delay(100 + Random.nextLong(500)) // Jeda dikurangi untuk lebih banyak ion
         }
     }
 
+    // Render dan animate setiap ion
     Box(modifier = Modifier.fillMaxSize()) {
         ions.forEach { bubble ->
-            val progress by animateFloatAsState(
-                targetValue = bubble.progress,
-                animationSpec = tween(durationMillis = 4000)
-            )
+            var hasStarted by remember { mutableStateOf(false) }
+
+            // Delay sebelum animasi dimulai
             LaunchedEffect(bubble) {
+                delay(bubble.animationDelay)
+                hasStarted = true
+
+                // Animasi scale in
+                while (bubble.scale < 1f) {
+                    bubble.scale += 0.05f
+                    delay(50)
+                }
+
+                // Animasi pergerakan
                 while (bubble.progress < 1f) {
-                    bubble.progress += 0.005f
+                    bubble.progress += 0.008f
                     delay(16)
                 }
-                val attachedOffset = Offset(
-                    x = endPosition.x + (Random.nextFloat() - 1f) * cathodeWidthPx + 20f,
-                    y = endPosition.y + (Random.nextFloat() - 0.5f) * cathodeHeightPx
-                )
-                onIonAttached(attachedOffset)
+
+                // Ion menempel di katoda, tambahkan posisi akhir
+                onIonAttached(bubble.endOffset)
+
+                // Fade out
+                while (bubble.opacity > 0f) {
+                    bubble.opacity -= 0.1f
+                    delay(50)
+                }
             }
 
-            val currentX = startPosition.x + (endPosition.x - startPosition.x) * progress
-            val currentY = startPosition.y + (endPosition.y - startPosition.y) * progress
+            if (hasStarted) {
+                val progress by animateFloatAsState(
+                    targetValue = bubble.progress,
+                    animationSpec = tween(durationMillis = 3000)
+                )
 
-            Image(
-                painter = painterResource(id = getIconForMetal(metal)),
-                contentDescription = "Ion ${metal.ion}",
-                modifier = Modifier
-                    .offset(
-                        x = with(density) { currentX.toDp() },
-                        y = with(density) { currentY.toDp() })
-                    .size(bubble.size.dp)
-                    .graphicsLayer { alpha = 1f - progress * 0.5f }
-            )
+                val scale by animateFloatAsState(
+                    targetValue = bubble.scale,
+                    animationSpec = tween(durationMillis = 500)
+                )
+
+                // Posisi ion dengan efek gelombang
+                val currentX = bubble.startOffset.x + (bubble.endOffset.x - bubble.startOffset.x) * progress
+                val currentY = bubble.startOffset.y + (bubble.endOffset.y - bubble.startOffset.y) * progress +
+                        (sin(progress * PI.toFloat() * 3) * 15f) // Efek gelombang
+
+                // Ion digambarkan sebagai ikon
+                Image(
+                    painter = painterResource(id = getIconForMetal(metal)),
+                    contentDescription = "Ion ${metal.ion}",
+                    modifier = Modifier
+                        .offset(
+                            x = with(density) { currentX.toDp() },
+                            y = with(density) { currentY.toDp() }
+                        )
+                        .size(bubble.size.dp)
+                        .graphicsLayer {
+                            scaleX = scale
+                            scaleY = scale
+                            alpha = bubble.opacity
+                        }
+                )
+            }
         }
-    }
-}
 
-private fun getIconForMetal(metal: Metal): Int {
-    return when (metal.symbol) {
-        "Pt" -> R.drawable.ic_pt
-        "Cu" -> R.drawable.ic_cu
-        "Ca" -> R.drawable.ic_ca
-        "Ba" -> R.drawable.ic_ba
-        else -> R.drawable.ic_default
+        // Bersihkan ion yang sudah selesai animasi
+        LaunchedEffect(ions.size) {
+            ions.removeAll { it.opacity <= 0f }
+        }
     }
 }
 

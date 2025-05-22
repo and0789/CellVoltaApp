@@ -72,7 +72,7 @@ fun AuthorProfile(
         // Dynamic sizing
         val horizontalPadding = screenW * 0.05f
         val topPadding = screenH * 0.1f
-        val buttonSize = screenW * 0.08f
+        val buttonSize = screenW * 0.05f
         val buttonPadding = screenW * 0.03f
         val titleFont = with(density) { (screenW * 0.06f).toSp() }
         val desiredCardWidth = screenW * 0.28f
